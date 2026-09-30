@@ -1,0 +1,7 @@
+# Built by build.py, locally or in CI. The template is the source.
+index.html
+og.png
+icon.png
+_greg/
+_site/
+__pycache__/

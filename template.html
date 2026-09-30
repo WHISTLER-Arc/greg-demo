@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Try Greg, the Home Assistant coffee table with feelings, in your browser before you install him.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Meet Greg">
+<meta property="og:description" content="A coffee table with feelings. Mostly bad ones. Poke him in your browser before you install him.">
+<meta property="og:url" content="https://whistler-arc.github.io/greg-demo/">
+<meta property="og:image" content="https://whistler-arc.github.io/greg-demo/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.png">
+%%BUILT_NOTE%%
+<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
+<title>Meet Greg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<style>
+/* Layout: a living-room stage (Greg + what he says) over the real panel, one column on phones, stage splits in two on wide screens. */
+:root {
+  --bg: #eceff0;
+  --surface: #ffffff;
+  --sunk: #f4f6f6;
+  --ink: #1d2426;
+  --muted: #5d696c;
+  --line: #d3dadb;
+  --eye: #4b8a1c;
+  --eye-soft: rgba(95, 170, 40, .14);
+  --pearl: #f3f4f4;
+  --m-resting: #8d96a0;
+  --m-annoyed: #c79a22;
+  --m-judging: #d0652f;
+  --m-existential: #b8433f;
+  --font-voice: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --radius: 18px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14191b; --surface: #1d2427; --sunk: #182022; --ink: #e6ebeb; --muted: #95a1a3;
+  --line: #2c3538; --eye: #93d552; --eye-soft: rgba(147, 213, 82, .12); --pearl: #e9ebeb;
+  --m-resting: #8f99a3; --m-annoyed: #e0b84c; --m-judging: #e8854f; --m-existential: #e0625c;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #14191b; --surface: #1d2427; --sunk: #182022; --ink: #e6ebeb; --muted: #95a1a3;
+  --line: #2c3538; --eye: #93d552; --eye-soft: rgba(147, 213, 82, .12); --pearl: #e9ebeb;
+  --m-resting: #8f99a3; --m-annoyed: #e0b84c; --m-judging: #e8854f; --m-existential: #e0625c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: flex; flex-direction: column; gap: 28px; }
+
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 { margin: 0; font-family: var(--font-voice); font-weight: 500; font-size: 2.4rem; letter-spacing: -.01em; }
+.brand p { margin: 0; color: var(--muted); }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; color: var(--muted); font: 600 12px var(--font-ui); letter-spacing: .06em; padding: 8px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.pill { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; font: 600 13px var(--font-ui); padding: 8px 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.pill[aria-pressed="true"] { border-color: var(--eye); color: var(--eye); background: var(--eye-soft); }
+button:focus-visible { outline: 2px solid var(--eye); outline-offset: 2px; }
+
+/* ---- stage ---- */
+.stage { display: grid; grid-template-columns: 1fr; gap: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 26px; padding: 18px; }
+@media (min-width: 820px) { .stage { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); padding: 24px; gap: 28px; } }
+.greg { position: relative; aspect-ratio: 1 / 1; max-width: 100%; border-radius: 22px; background: var(--pearl); overflow: hidden; cursor: pointer; border: 0; padding: 0; transition: box-shadow .35s ease; box-shadow: 0 0 0 3px var(--mood, var(--m-resting)) inset; }
+.greg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .35s ease; }
+.greg img.show { opacity: 1; }
+.greg.jolt img.show { animation: jolt .28s ease; }
+@keyframes jolt { 30% { transform: translate(-3px, 1px) rotate(-.6deg); } 60% { transform: translate(3px, -1px) rotate(.5deg); } }
+.greg .hint { position: absolute; left: 12px; bottom: 12px; font: 500 12px var(--font-ui); color: #3b4446; background: rgba(255,255,255,.8); border-radius: 999px; padding: 4px 10px; }
+.greg .ignored { position: absolute; right: 12px; top: 12px; font: 500 12px var(--font-mono); color: #3b4446; background: rgba(255,255,255,.88); border-radius: 8px; padding: 4px 8px; opacity: 0; transition: opacity .2s; }
+.greg .ignored.on { opacity: 1; }
+
+.side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.bubble { position: relative; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; min-height: 128px; }
+.bubble .who { font: 600 11px var(--font-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.bubble blockquote { margin: 8px 0 0; font-family: var(--font-voice); font-style: italic; font-size: 1.3rem; line-height: 1.42; text-wrap: pretty; transition: opacity .2s; }
+.bubble blockquote.stagedir { font-style: normal; font-family: var(--font-ui); font-size: .95rem; color: var(--muted); }
+
+.meter { display: flex; flex-direction: column; gap: 8px; }
+.meterhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.moodname { font-family: var(--font-voice); font-size: 1.5rem; font-weight: 500; color: var(--mood, var(--m-resting)); transition: color .3s; }
+.meterhead .num { font: 500 13px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ticks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.tick { height: 10px; border-radius: 3px; background: var(--line); transition: background .25s; }
+.tick.on { background: var(--mood, var(--m-resting)); }
+.scale { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; font: 500 11px var(--font-mono); color: var(--muted); }
+.scale span:nth-child(1), .scale span:nth-child(3), .scale span:nth-child(6) { color: var(--ink); }
+
+.actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.act { text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 12px 14px; cursor: pointer; font-family: var(--font-ui); display: flex; flex-direction: column; gap: 2px; transition: border-color .2s, transform .1s; }
+.act:hover { border-color: var(--eye); }
+.act:active { transform: scale(.98); }
+.act b { font-size: 14px; font-weight: 600; }
+.act small { font-size: 12px; color: var(--muted); }
+.act:disabled { opacity: .5; cursor: default; }
+.act.busy { border-color: var(--eye); background: var(--eye-soft); }
+
+.clock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.clock div { background: var(--sunk); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.clock dt { font: 600 10px var(--font-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.clock dd { margin: 2px 0 0; font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fine { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+.log { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.log li { font-size: 13px; color: var(--muted); display: flex; gap: 10px; }
+.log li span:first-child { font-family: var(--font-mono); font-size: 11px; padding-top: 2px; flex: 0 0 88px; text-transform: uppercase; letter-spacing: .04em; }
+.log li span:last-child { min-width: 0; font-family: var(--font-voice); font-style: italic; font-size: 14px; color: var(--ink); }
+
+/* ---- panel section ---- */
+.sechead { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.sechead p { max-width: 68ch; }
+.sechead .row { display: flex; align-items: center; gap: 12px; }
+.sechead .chev { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; transition: transform .35s ease, border-color .2s; }
+.sechead .chev svg { width: 14px; height: 14px; stroke: var(--ink); fill: none; stroke-width: 2.2; }
+.sechead:hover .chev { border-color: var(--eye); }
+.sechead[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.sechead .cue { font: 600 12px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--eye); }
+.slide { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s ease, opacity .35s ease; opacity: 0; margin-top: -28px; }
+.slide.open { grid-template-rows: 1fr; opacity: 1; margin-top: 0; }
+.slide > div { min-height: 0; overflow: hidden; }
+.panelgroup { display: flex; flex-direction: column; gap: 28px; }
+.sechead h2 { margin: 0; font-family: var(--font-voice); font-weight: 500; font-size: 1.6rem; text-wrap: balance; }
+.sechead p { margin: 0; color: var(--muted); }
+.panelbox { border: 1px solid var(--line); border-radius: 26px; overflow: hidden;
+  /* Home Assistant theme variables the real panel reads */
+  --primary-background-color: var(--bg); --card-background-color: var(--surface);
+  --secondary-background-color: var(--sunk); --primary-text-color: var(--ink);
+  --secondary-text-color: var(--muted); --disabled-text-color: var(--m-resting);
+  --divider-color: var(--line); --primary-color: #03a9f4; --success-color: #7cc36e;
+  --error-color: var(--m-existential); --warning-color: var(--m-annoyed);
+  --paper-font-body1_-_font-family: var(--font-ui); --ha-card-box-shadow: none;
+}
+greg-panel { display: block; min-height: 0 !important; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 13px; max-width: calc(100% - 32px); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 50; }
+.toast.on { opacity: 1; }
+
+footer.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 20px; }
+footer.cta p { margin: 0; max-width: 60ch; }
+footer.cta a { background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; padding: 12px 18px; border-radius: 12px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Greg</h1>
+      <p>A coffee table with feelings. Mostly bad ones.</p>
+    </div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Language" id="langseg">
+        <button data-lang="en" aria-pressed="true">EN</button>
+        <button data-lang="nl" aria-pressed="false">NL</button>
+        <button data-lang="pt" aria-pressed="false">PT</button>
+      </div>
+      <button class="pill" id="sound" aria-pressed="true">Sound on</button>
+    </div>
+  </header>
+
+  <section class="stage" aria-label="Greg on his coffee table">
+    <button class="greg" id="greg" aria-label="Tap the table">
+      <img id="img-resting" alt="Greg, resting" class="show">
+      <img id="img-annoyed" alt="Greg, annoyed">
+      <img id="img-judging" alt="Greg, judging">
+      <img id="img-existential" alt="Greg, in an existential state">
+      <span class="hint">Tap the table</span>
+      <span class="ignored" id="ignored">ignored</span>
+    </button>
+
+    <div class="side">
+      <div class="bubble" aria-live="polite">
+        <div class="who"><span>Greg says</span><span id="pooltag"></span></div>
+        <blockquote id="line" class="stagedir">Greg is resting. Put something on him and he will tell you how he feels about it.</blockquote>
+      </div>
+
+      <div class="meter">
+        <div class="meterhead"><span class="moodname" id="moodname">Resting</span><span class="num" id="moodnum">0 of 6 · 0%</span></div>
+        <div class="ticks" id="ticks"><i class="tick"></i><i class="tick"></i><i class="tick"></i><i class="tick"></i><i class="tick"></i><i class="tick"></i></div>
+        <div class="scale"><span>1 annoyed</span><span></span><span>3 judging</span><span></span><span></span><span>6 existential</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="act" data-act="brush"><b>Brush past</b><small>One small disturbance</small></button>
+        <button class="act" data-act="mug"><b>Put a mug down</b><small>He will file it</small></button>
+        <button class="act" id="rush" data-act="rush"><b>Everyone's home</b><small>Keep it coming until he breaks</small></button>
+        <button class="act" data-act="brood"><b>Skip 42 minutes</b><small>Time for an existential thought</small></button>
+      </div>
+
+      <dl class="clock">
+        <div><dt>Calms down</dt><dd id="c-reset">now</dd></div>
+        <div><dt>Silence line</dt><dd id="c-silence">not yet</dd></div>
+        <div><dt>Disturbed today</dt><dd id="c-tally">0</dd></div>
+      </dl>
+      <p class="fine">In English he speaks with Piper's Alan voice, the one he was written for. Dutch and Portuguese use your device's own voice. Greg calms down 8 seconds after the last disturbance, same as at home. The 20 minutes of quiet before his silence line are shortened to 20 seconds here, and his 42 minute brood is on a button.</p>
+      <ul class="log" id="log"></ul>
+    </div>
+  </section>
+
+  <div class="panelgroup">
+  <button class="sechead" id="paneltoggle" aria-expanded="false" aria-controls="panelslide">
+    <span class="row"><span class="chev" aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M2 5l5 5 5-5"/></svg></span><h2>His panel in Home Assistant</h2></span>
+    <p>This is Greg's real sidebar panel, running against a pretend Home Assistant. Poke him here, change his settings, write him a line. It all feeds the same Greg as above, and nothing leaves this page.</p>
+    <span class="cue" id="panelcue">Show the panel</span>
+  </button>
+  <div class="slide" id="panelslide"><div><div class="panelbox"><greg-panel id="panel"></greg-panel></div></div></div>
+  </div>
+
+  <footer class="cta">
+    <p><b>Want him on your own table?</b> Greg is in the HACS default store. You need a vibration sensor and anything that can speak.</p>
+    <a href="https://github.com/WHISTLER-Arc/Greg" target="_blank" rel="noopener">Get Greg on GitHub</a>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LINES = %%LINES%%;
+const IMGS = %%IMGS%%;
+
+// ---------------------------------------------------------------------------
+// Greg's brain, ported from custom_components/greg/__init__.py.
+// Thresholds, reset delay, mood levels, the shuffled deck with its seam guard
+// and the 30% opener chance all match the integration. Only the 20 minute
+// silence timeout and the 42 minute brooding interval are compressed.
+// ---------------------------------------------------------------------------
+const SOFT = 1, MEDIUM = 3, CHAOS = 6, RESET_DELAY = 8;
+const SILENCE_DEMO_SECS = 20, OPENER_CHANCE = 0.3, SEAM = 5, MAX_DEBOUNCE = 10;
+const MOOD_LABEL = { resting: "Resting", annoyed: "Annoyed", judging: "Judging", existential: "Existential" };
+const POOL_LABEL = { soft: "soft touch", medium: "a bit of activity", chaos: "full chaos", existential: "existential", silence: "silence" };
+
+const greg = {
+  counter: 0, tally: 0, mood: "resting", level: 0, enabled: true,
+  lastLine: "", lastPool: "", lastAccepted: null,
+  resetAt: null, silenceAt: null, resetT: null, silenceT: null,
+  decks: {}, pos: {},
+  config: {
+    vibration_sensor: "binary_sensor.coffee_table_vibration",
+    media_player: "media_player.living_room",
+    tts_engine: "tts.piper",
+    volume: 0.7, sensitivity: 75,
+    quiet_hours_enabled: false, quiet_start: "22:00", quiet_end: "08:00",
+    conditions: [], language: "",
+  },
+  customLines: {}, customOnly: false,
+};
+
+function lang() { const l = greg.config.language || "en"; return LINES[l] ? l : "en"; }
+function debounceSecs() { const s = Math.max(1, Math.min(100, Number(greg.config.sensitivity) || 75)); return (100 - s) / 100 * MAX_DEBOUNCE; }
+
+function linesFor(l, pool) {
+  const mine = ((greg.customLines[l] || {})[pool]) || [];
+  if (greg.customOnly && mine.length) return mine.slice();
+  return LINES[l].pools[pool].concat(mine);
+}
+
+function nextLine(pool) {
+  const l = lang(), key = l + ":" + pool;
+  let deck = greg.decks[key] || [], pos = greg.pos[key] || 0;
+  if (pos >= deck.length) {
+    const tail = new Set(deck.slice(-SEAM));
+    const fresh = linesFor(l, pool);
+    for (let i = fresh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [fresh[i], fresh[j]] = [fresh[j], fresh[i]]; }
+    if (tail.size && fresh.length > SEAM * 2) {
+      for (let i = 0; i < SEAM; i++) {
+        if (!tail.has(fresh[i])) continue;
+        const cands = []; for (let j = SEAM; j < fresh.length; j++) if (!tail.has(fresh[j])) cands.push(j);
+        if (!cands.length) break;
+        const j = cands[Math.floor(Math.random() * cands.length)];
+        [fresh[i], fresh[j]] = [fresh[j], fresh[i]];
+      }
+    }
+    greg.decks[key] = deck = fresh; pos = 0;
+  }
+  greg.pos[key] = pos + 1;
+  return deck[pos];
+}
+
+function hhmm(s) { const [h, m] = String(s || "0:0").split(":").map(Number); return h * 60 + (m || 0); }
+function quietNow() {
+  if (!greg.config.quiet_hours_enabled) return false;
+  const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
+  const a = hhmm(greg.config.quiet_start), b = hhmm(greg.config.quiet_end);
+  return a <= b ? (now >= a && now < b) : (now >= a || now < b);
+}
+function failingCondition() {
+  for (const row of greg.config.conditions || []) {
+    const st = fakeStates[row.entity_id];
+    if (!st || st.state === "unavailable" || st.state === "unknown") continue;
+    const match = String(st.state) === String(row.state);
+    if ((row.op === "is" && !match) || (row.op === "is_not" && match)) return st.attributes.friendly_name || row.entity_id;
+  }
+  return null;
+}
+function blockedBy() { return quietNow() ? "quiet hours" : failingCondition(); }
+function blocked() { return !!blockedBy(); }
+
+function updateMood() {
+  const c = greg.counter;
+  if (c >= CHAOS) { greg.mood = "existential"; greg.level = 100; }
+  else if (c >= MEDIUM) { greg.mood = "judging"; greg.level = 50 + Math.floor(c / CHAOS * 50); }
+  else if (c >= SOFT) { greg.mood = "annoyed"; greg.level = Math.floor(c / MEDIUM * 50); }
+  else { greg.mood = "resting"; greg.level = 0; }
+  greg.level = Math.max(0, Math.min(100, greg.level));
+  render();
+}
+
+function speak(pool) {
+  const line = nextLine(pool);
+  const opener = (Math.random() < OPENER_CHANCE) ? LINES[lang()].openers[Math.floor(Math.random() * LINES[lang()].openers.length)] : "";
+  greg.lastLine = opener ? opener + " " + line : line;
+  greg.lastPool = pool;
+  logLine(pool, greg.lastLine);
+  voice(greg.lastLine, opener, line);
+  render(true);
+}
+
+function react() {
+  if (greg.counter >= CHAOS) speak("chaos");
+  else if (greg.counter >= MEDIUM) speak("medium");
+  else if (greg.counter >= SOFT) speak("soft");
+}
+
+function scheduleReset() {
+  clearTimeout(greg.resetT); clearTimeout(greg.silenceT);
+  greg.silenceAt = null;
+  greg.resetAt = Date.now() + RESET_DELAY * 1000;
+  greg.resetT = setTimeout(() => {
+    greg.counter = 0; greg.resetAt = null; updateMood();
+    greg.silenceAt = Date.now() + SILENCE_DEMO_SECS * 1000;
+    greg.silenceT = setTimeout(() => {
+      greg.silenceAt = null;
+      if (greg.enabled && !blocked()) speak("silence"); else render();
+    }, SILENCE_DEMO_SECS * 1000);
+  }, RESET_DELAY * 1000);
+}
+
+// One reading from the vibration sensor. Same gatekeeping order as _handle_vibration.
+function vibration() {
+  pulseSensor();
+  if (!greg.enabled) { stageDir("Greg is switched off. He notices nothing. He is grateful."); return false; }
+  if (blocked()) { stageDir("Greg is holding his tongue: " + blockedBy() + "."); return false; }
+  const now = performance.now() / 1000, win = debounceSecs();
+  if (win > 0 && greg.lastAccepted !== null && now - greg.lastAccepted < win) { flagIgnored(win); return false; }
+  greg.lastAccepted = now;
+  greg.counter++; greg.tally++;
+  scheduleReset();
+  jolt(); updateMood(); react();
+  return true;
+}
+
+// greg.poke: skips the sensor and the refractory window, exactly like async_poke.
+function poke() {
+  if (!greg.enabled || blocked()) return;
+  greg.counter++; greg.tally++;
+  scheduleReset(); jolt(); updateMood(); react();
+}
+
+function brood() {
+  if (!greg.enabled) return stageDir("Greg is switched off. Even his brooding is off.");
+  if (blocked()) return stageDir("Greg is holding his tongue: " + blockedBy() + ".");
+  speak("existential");
+}
+
+// ---------------------------------------------------------------------------
+// Voice. English plays pre-rendered clips of Piper's en_GB Alan voice, the
+// voice Greg was written for. Dutch, Portuguese and any line someone writes in
+// the panel fall back to the browser's own speech engine.
+// ---------------------------------------------------------------------------
+let soundOn = true;
+const CLIPS = %%CLIPS%%;
+// One element, reused. Phones unlock audio per element on the first tap, so a
+// fresh Audio() for the silence line (fired by a timer) could stay mute.
+const player = new Audio();
+player.preload = "auto";
+let clipQueue = [];
+function clipFor(text) { return lang() === "en" ? CLIPS[text] || null : null; }
+function stopAll() {
+  clipQueue = []; try { player.pause(); } catch (e) {}
+  if (CAN_SPEAK && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
+}
+function playNext() {
+  const src = clipQueue.shift();
+  if (!src) return;
+  player.src = src;
+  player.volume = Math.max(0.05, Math.min(1, Number(greg.config.volume) || 0.7));
+  const p = player.play();
+  if (p && p.catch) p.catch(err => {
+    clipQueue = [];
+    if (err && err.name === "NotAllowedError") toast("Tap anywhere on the page once and Greg can speak.");
+    else toast("Greg's voice clip did not load. Check your connection.");
+  });
+}
+player.addEventListener("ended", playNext);
+const VOICE_LANG = { en: "en-GB", nl: "nl-NL", pt: "pt-PT" };
+function pickVoice(code) {
+  const vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  const base = code.split("-")[0];
+  return vs.find(v => v.lang === code && /male|daniel|arthur|george|xander|joaquim|duarte/i.test(v.name))
+      || vs.find(v => v.lang === code) || vs.find(v => v.lang && v.lang.startsWith(base)) || null;
+}
+// Some in-app viewers (the Claude Android app among them) ship a web view with
+// no speech engine at all. Say so instead of pretending the button did something.
+const CAN_SPEAK = !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+let voiceWatch = null;
+function voice(text, opener, line) {
+  if (!soundOn) return;
+  // Alan, when every part of what Greg is saying has a clip.
+  const parts = (opener || line) ? [opener, line].filter(Boolean) : [text];
+  const srcs = parts.map(clipFor);
+  if (srcs.every(Boolean)) { stopAll(); clipQueue = srcs; playNext(); return; }
+  if (!CAN_SPEAK) {
+    if (lang() !== "en") toast("This viewer has no speech engine for this language. English still works.");
+    return;
+  }
+  try { player.pause(); } catch (e) {} clipQueue = [];
+  const s = window.speechSynthesis;
+  const u = new SpeechSynthesisUtterance(text);
+  const code = VOICE_LANG[lang()];
+  u.lang = code; const v = pickVoice(code); if (v) u.voice = v;
+  u.rate = 0.86; u.pitch = 0.72; u.volume = Math.max(0.05, Math.min(1, Number(greg.config.volume) || 0.7));
+  clearTimeout(voiceWatch);
+  u.onstart = () => clearTimeout(voiceWatch);
+  u.onerror = e => { clearTimeout(voiceWatch); if (e.error !== "interrupted" && e.error !== "canceled") toast("Greg tried to speak but the browser refused (" + e.error + ")."); };
+  // If nothing starts within a few seconds, the device has no working voice here.
+  voiceWatch = setTimeout(() => { if (!s.speaking) toast("No sound came out. Check the silent switch and volume, or open this page in your browser."); }, 3500);
+  try { s.resume(); } catch (e) {}
+  // Cancelling and speaking in the same instant drops the new line on Chrome
+  // and Safari, so only cancel when something is actually talking.
+  if (s.speaking || s.pending) { s.cancel(); setTimeout(() => s.speak(u), 80); }
+  else s.speak(u);
+}
+
+// ---------------------------------------------------------------------------
+// Stage UI
+// ---------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+Object.entries(IMGS).forEach(([m, src]) => { $("img-" + m).src = src; });
+
+function render(newLine) {
+  const moodVar = "var(--m-" + greg.mood + ")";
+  document.documentElement.style.setProperty("--mood", moodVar);
+  ["resting", "annoyed", "judging", "existential"].forEach(m => $("img-" + m).classList.toggle("show", m === greg.mood));
+  $("moodname").textContent = MOOD_LABEL[greg.mood];
+  $("moodnum").textContent = Math.min(greg.counter, 6) + (greg.counter > 6 ? "+" : "") + " of 6 · " + greg.level + "%";
+  [...$("ticks").children].forEach((t, i) => t.classList.toggle("on", i < greg.counter));
+  $("c-tally").textContent = greg.tally;
+  if (newLine) {
+    const q = $("line");
+    q.style.opacity = 0;
+    setTimeout(() => { q.textContent = greg.lastLine; q.classList.remove("stagedir"); q.style.opacity = 1; }, 160);
+    $("pooltag").textContent = POOL_LABEL[greg.lastPool] || "";
+  }
+  pushHass();
+}
+function stageDir(text) {
+  const q = $("line"); q.textContent = text; q.classList.add("stagedir"); $("pooltag").textContent = "";
+}
+function logLine(pool, text) {
+  const li = document.createElement("li");
+  li.innerHTML = "<span></span><span></span>";
+  li.children[0].textContent = pool; li.children[1].textContent = text;
+  const log = $("log"); log.prepend(li);
+  while (log.children.length > 4) log.lastChild.remove();
+  log.children[0].hidden = true; // newest is already in the bubble
+  [...log.children].slice(1).forEach(c => c.hidden = false);
+}
+function jolt() { const g = $("greg"); g.classList.remove("jolt"); void g.offsetWidth; g.classList.add("jolt"); }
+let ignT;
+function flagIgnored(win) {
+  const el = $("ignored"); el.textContent = "ignored · sensitivity " + greg.config.sensitivity + " (" + win.toFixed(1) + "s)";
+  el.classList.add("on"); clearTimeout(ignT); ignT = setTimeout(() => el.classList.remove("on"), 1400);
+}
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("on"), 2600); }
+
+setInterval(() => {
+  const now = Date.now();
+  $("c-reset").textContent = greg.resetAt ? "in " + Math.ceil((greg.resetAt - now) / 1000) + "s" : (greg.counter ? "…" : "now");
+  $("c-silence").textContent = greg.silenceAt ? "in " + Math.ceil((greg.silenceAt - now) / 1000) + "s" : (greg.resetAt ? "after calm" : "not yet");
+}, 250);
+
+$("greg").onclick = () => vibration();
+let rushT = null;
+function stopRush() { clearTimeout(rushT); rushT = null; $("rush").classList.remove("busy"); $("rush").querySelector("small").textContent = "Keep it coming until he breaks"; }
+document.querySelectorAll(".act").forEach(b => b.onclick = () => {
+  const a = b.dataset.act;
+  if (a !== "rush" && rushT) stopRush();
+  if (a === "brush" || a === "mug") vibration();
+  if (a === "brood") brood();
+  if (a === "rush") {
+    if (rushT) return stopRush();
+    b.classList.add("busy"); b.querySelector("small").textContent = "Tap again to stop";
+    const step = () => {
+      const ok = vibration();
+      if ((ok && greg.counter >= CHAOS) || !greg.enabled || blocked()) return stopRush();
+      // Spaced just past the refractory window, the way a busy room actually lands.
+      rushT = setTimeout(step, (debounceSecs() + 0.4) * 1000);
+    };
+    step();
+  }
+});
+$("sound").onclick = () => {
+  soundOn = !soundOn;
+  $("sound").setAttribute("aria-pressed", soundOn); $("sound").textContent = soundOn ? "Sound on" : "Sound off";
+  if (!soundOn) { clearTimeout(voiceWatch); stopAll(); return; }
+  // Phones only allow sound that starts inside a tap, so Greg says something right now.
+  if (lang() === "en") voice("Very well.");
+  else voice(greg.lastLine || ({ nl: "Geluid aan. Ik hoopte eigenlijk van niet.", pt: "Som ligado. Esperava que não o fizesses." })[lang()]);
+};
+function setLang(l) {
+  greg.config.language = l;
+  document.querySelectorAll("#langseg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === lang()));
+  render();
+}
+document.querySelectorAll("#langseg button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
+
+// ---------------------------------------------------------------------------
+// A pretend Home Assistant for the real panel. It publishes the same four
+// sensors and switch the integration does, with the same attributes, and
+// answers the services the panel calls.
+// ---------------------------------------------------------------------------
+const fakeStates = {};
+function ent(id, state, attrs) { fakeStates[id] = { entity_id: id, state, attributes: Object.assign({ friendly_name: id }, attrs || {}), last_changed: new Date().toISOString() }; }
+ent("binary_sensor.coffee_table_vibration", "off", { friendly_name: "Coffee table vibration", device_class: "vibration" });
+ent("binary_sensor.sofa_vibration", "off", { friendly_name: "Sofa vibration", device_class: "vibration" });
+ent("media_player.living_room", "idle", { friendly_name: "Living room speaker" });
+ent("media_player.kitchen", "idle", { friendly_name: "Kitchen speaker" });
+ent("tts.piper", "unknown", { friendly_name: "Piper" });
+ent("tts.google_en_com", "unknown", { friendly_name: "Google Translate en com" });
+ent("input_boolean.movie_night", "off", { friendly_name: "Movie night" });
+ent("person.you", "home", { friendly_name: "You" });
+
+let sensorT;
+function pulseSensor() {
+  const id = greg.config.vibration_sensor;
+  if (!fakeStates[id]) return;
+  fakeStates[id].state = "on"; clearTimeout(sensorT);
+  sensorT = setTimeout(() => { fakeStates[id].state = "off"; pushHass(); }, 900);
+}
+
+function poolSizes() {
+  const l = lang(), out = {};
+  Object.keys(LINES[l].pools).forEach(p => {
+    const mine = ((greg.customLines[l] || {})[p]) || [];
+    out[p] = { built_in: LINES[l].pools[p].length, mine: mine.length, in_use: linesFor(l, p).length };
+  });
+  return out;
+}
+
+function buildHass() {
+  const bb = blockedBy();
+  ent("sensor.greg_mood", greg.mood, {
+    friendly_name: "Greg Mood",
+    image: "/greg_images/greg_" + greg.mood + ".png", image_file: "greg_" + greg.mood + ".png",
+    quiet_hours: quietNow(), blocked: !!bb, blocked_by: bb, speech_problem: null,
+    enabled: greg.enabled, sw_version: "%%VERSION%%",
+    config: JSON.parse(JSON.stringify(greg.config)),
+    language_options: Object.assign({ "": "Follow Home Assistant" }, Object.fromEntries(Object.entries(LINES).map(([k, v]) => [k, v.name]))),
+    language_effective: lang(),
+    custom_lines: JSON.parse(JSON.stringify(greg.customLines)), custom_only: greg.customOnly,
+    pool_sizes: poolSizes(),
+  });
+  ent("sensor.greg_mood_level", String(greg.level), { friendly_name: "Greg Mood level", unit_of_measurement: "%" });
+  ent("sensor.greg_last_line", greg.lastLine.length > 255 ? greg.lastLine.slice(0, 252) + "..." : greg.lastLine, { friendly_name: "Greg Last line", full_line: greg.lastLine });
+  ent("sensor.greg_disturbances_today", String(greg.tally), { friendly_name: "Greg Disturbances today", unit_of_measurement: "events" });
+  ent("switch.greg_enabled", greg.enabled ? "on" : "off", { friendly_name: "Greg" });
+  const states = {};
+  Object.keys(fakeStates).forEach(k => states[k] = Object.assign({}, fakeStates[k]));
+  return {
+    states,
+    language: "en", locale: { language: "en" }, config: { language: "en-GB" }, user: { name: "You", is_admin: true },
+    callService,
+  };
+}
+
+function callService(domain, service, data) {
+  data = data || {};
+  if (domain === "greg" && service === "poke") poke();
+  else if (domain === "switch") { greg.enabled = service === "turn_on"; if (!greg.enabled) stopRush(); render(); }
+  else if (domain === "greg" && service === "set_options") {
+    Object.keys(greg.config).forEach(k => { if (k in data) greg.config[k] = data[k]; });
+    greg.lastAccepted = null;
+    document.querySelectorAll("#langseg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === lang()));
+    render(); toast("Settings applied to the demo Greg.");
+  }
+  else if (domain === "greg" && service === "set_lines") {
+    const l = data.language || lang();
+    if (data.pool && Array.isArray(data.lines)) { greg.customLines[l] = greg.customLines[l] || {}; greg.customLines[l][data.pool] = data.lines.slice(0, 200); }
+    if ("custom_only" in data) greg.customOnly = !!data.custom_only;
+    Object.keys(greg.decks).forEach(k => { if (k.startsWith(l + ":")) { delete greg.decks[k]; delete greg.pos[k]; } });
+    render(); clearTimeout(callService._lt); callService._lt = setTimeout(() => toast("Your lines are in his deck now. Only on this page."), 50);
+  }
+  else if (domain === "greg" && service === "uninstall") toast("Nothing to uninstall here. Greg is relieved, briefly.");
+  else if (domain === "homeassistant" && service === "restart") toast("Pretend restart. Nothing actually restarted.");
+  return Promise.resolve({});
+}
+
+// ---------------------------------------------------------------------------
+// The real panel, unmodified, from custom_components/greg/panel/greg-panel.js
+// ---------------------------------------------------------------------------
+%%PANEL_JS%%
+
+
+const panel = $("panel");
+let patched = false;
+function pushHass() {
+  if (!customElements.get("greg-panel")) return;
+  panel.hass = buildHass();
+  if (!patched && panel.shadowRoot) {
+    patched = true;
+    const r = panel.shadowRoot;
+    // Images: the panel builds sibling URLs from its static path, which does not exist here.
+    ["resting", "annoyed", "judging", "existential"].forEach(m => { const i = r.getElementById("img-" + m); if (i) i.src = IMGS[m]; });
+    // "Advanced settings" would navigate to the integration page. There is none here.
+    r.querySelectorAll("[data-full]").forEach(el => el.onclick = () => toast("Advanced settings live in Home Assistant's integration page."));
+  }
+}
+$("paneltoggle").onclick = () => {
+  const open = !$("panelslide").classList.contains("open");
+  $("panelslide").classList.toggle("open", open);
+  $("paneltoggle").setAttribute("aria-expanded", open);
+  $("panelcue").textContent = open ? "Hide the panel" : "Show the panel";
+};
+document.addEventListener("pointerdown", function unlock() {
+  document.removeEventListener("pointerdown", unlock);
+  if (player.src) return;
+  player.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+  const p = player.play(); if (p && p.catch) p.catch(() => {});
+}, { capture: true });
+render();
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => {};
+</script>
+
+</body>
+</html>
