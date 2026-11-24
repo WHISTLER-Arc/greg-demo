@@ -6,12 +6,17 @@ name: Build and deploy
 on:
   push:
     branches: [main]
+    # The heartbeat commit below would otherwise start another run of this
+    # same workflow, for nothing.
+    paths-ignore: [".keepalive"]
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # write, not read, so the heartbeat step can push. Everything else here
+  # only reads.
+  contents: write
   pages: write
   id-token: write
 
@@ -47,6 +52,34 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+      # GitHub disables a scheduled workflow in a public repository after 60
+      # days with no repository activity. This repo is deliberately never
+      # pushed to, since the demo rebuilds itself from Greg's main, so the
+      # schedule was quietly on course to switch itself off. The failure is
+      # silent: Pages keeps serving the last build, so the demo would go on
+      # looking healthy while showing an older and older Greg.
+      #
+      # A commit is unambiguously repository activity. GitHub does not define
+      # what else counts, so this relies on nothing subtler. Monthly rather
+      # than weekly to keep the log readable, which still leaves a month of
+      # margin on the 60 days.
+      - name: Keep the schedule alive
+        run: |
+          set -euo pipefail
+          age=$(( $(date -u +%s) - $(git log -1 --format=%ct) ))
+          if [ "$age" -lt 2592000 ]; then
+            echo "Last commit was $(( age / 86400 )) days ago. Nothing to do."
+            exit 0
+          fi
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .keepalive
+          git commit -m "chore: keep the scheduled build alive"
+          git push origin HEAD:main
+          echo "Last commit was $(( age / 86400 )) days ago. Heartbeat pushed, 60-day clock reset." \
+            | tee -a "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: build
